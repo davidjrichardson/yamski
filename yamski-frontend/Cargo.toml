@@ -1,0 +1,7 @@
+[package]
+name = "yamski-frontend"
+version = "0.1.0"
+authors = ["David Richardson <david@tankski.co.uk>"]
+edition = "2018"
+
+[dependencies]

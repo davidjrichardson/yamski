@@ -1,0 +1,9 @@
+[package]
+name = "yamski-backend"
+version = "0.1.0"
+authors = ["David Richardson <david@tankski.co.uk>"]
+edition = "2018"
+
+[dependencies]
+rocket = "0.3.17"
+rocket_codegen = "0.3.17"
