@@ -2,12 +2,15 @@
 #![plugin(rocket_codegen)]
 
 extern crate rocket;
+extern crate diesel;
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
+pub mod guards;
+mod routing;
 
 fn main() {
-    rocket::ignite().mount("/", routes![index]).launch();
+    rocket::ignite()
+        .manage(guards::init_pool())
+        .mount("/", routes![routing::index, routing::hello])
+        .mount("/test", routes![routing::hello])
+        .launch();
 }
