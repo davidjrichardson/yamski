@@ -1,11 +1,25 @@
 use std::net::SocketAddr;
 use std::fs::File;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::cmp::Ordering;
 
 use chrono::{DateTime, Local};
 
 use url::Url;
+
+pub struct MusicState {
+    pub user_list: Vec<Arc<User>>,
+    pub playlist: Vec<Arc<PlaylistItem>>,
+}
+
+impl MusicState {
+    pub fn new() -> RwLock<MusicState> {
+        RwLock::new(MusicState {
+            user_list: Vec::new(),
+            playlist: Vec::new(),
+        })
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct User {
@@ -39,6 +53,6 @@ impl PartialOrd for PlaylistItem {
 
 impl Ord for PlaylistItem {
     fn cmp(&self, other: &PlaylistItem) -> Ordering {
-        self.submitted.cmp(&other.submitted);
+        self.submitted.cmp(&other.submitted)
     }
 }
