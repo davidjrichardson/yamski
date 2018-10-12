@@ -1,23 +1,24 @@
-use std::net::SocketAddr;
-use std::fs::File;
-use std::sync::{Arc, RwLock};
 use std::cmp::Ordering;
+use std::fs::File;
+use std::net::SocketAddr;
+use std::sync::{Arc, RwLock};
 
 use chrono::{DateTime, Local};
 
 use url::Url;
 
+#[derive(Debug)]
 pub struct MusicState {
-    pub user_list: Vec<Arc<User>>,
-    pub playlist: Vec<Arc<PlaylistItem>>,
+    pub user_list: RwLock<Vec<Arc<User>>>,
+    pub playlist: RwLock<Vec<Arc<PlaylistItem>>>,
 }
 
 impl MusicState {
-    pub fn new() -> RwLock<MusicState> {
-        RwLock::new(MusicState {
-            user_list: Vec::new(),
-            playlist: Vec::new(),
-        })
+    pub fn new() -> MusicState {
+        MusicState {
+            user_list: RwLock::new(Vec::new()),
+            playlist: RwLock::new(Vec::new()),
+        }
     }
 }
 
