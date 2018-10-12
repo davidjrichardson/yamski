@@ -1,9 +1,7 @@
 extern crate rocket;
 
-use crate::guards::DbConn;
-
 #[get("/")]
-fn index(conn: DbConn) -> &'static str {
+fn index() -> &'static str {
     "Hello, world!"
 }
 

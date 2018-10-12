@@ -1,39 +1,29 @@
-use std::ops::Deref;
+// use std::ops::Deref;
 
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Request, State, Outcome};
 
-use diesel::sqlite::SqliteConnection;
-use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+use crate::models::{User, PlaylistItem};
 
-type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
+use std::sync::Arc;
 
-static DATABASE_URL: &'static str = "test.db";
-
-pub fn init_pool() -> SqlitePool {
-    let manager = ConnectionManager::<SqliteConnection>::new(DATABASE_URL);
-    Pool::new(manager).expect("db pool")
+pub struct MusicState {
+    pub user_list: Vec<Arc<User>>,
+    pub playlist: Vec<Arc<PlaylistItem>>,
 }
 
-pub struct DbConn(pub PooledConnection<ConnectionManager<SqliteConnection>>);
+pub struct ServerState(pub MusicState);
 
-impl<'a, 'r> FromRequest<'a, 'r> for DbConn {
-    type Error = ();
+// TODO: Implement this
+// impl<'a, 'r> FromRequest<'a, 'r> for ServerState {
+//     type Error = ();
 
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-        let pool = request.guard::<State<SqlitePool>>()?;
-        match pool.get() {
-            Ok(conn) => Outcome::Success(DbConn(conn)),
-            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ()))
-        }
-    }
-}
-
-impl Deref for DbConn {
-    type Target = SqliteConnection;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+//     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+//         let state = request.guard::<State<MusicState>>()?;
+//         match state.get() {
+//             Ok(music_state) => Outcome::Success(ServerState(music_state)),
+//             Err(_)          => Outcome::Failure((Status::ServiceUnavailable, ()))
+//         }
+//     }
+// }

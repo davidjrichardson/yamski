@@ -2,15 +2,16 @@
 #![plugin(rocket_codegen)]
 
 extern crate rocket;
-extern crate diesel;
+extern crate chrono;
+extern crate url;
 
 pub mod guards;
+pub mod models;
+
 mod routing;
 
 fn main() {
     rocket::ignite()
-        .manage(guards::init_pool())
         .mount("/", routes![routing::index, routing::hello])
-        .mount("/test", routes![routing::hello])
         .launch();
 }
