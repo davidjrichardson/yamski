@@ -1,7 +1,11 @@
 use std::cmp::Ordering;
 use std::fs::File;
-use std::net::SocketAddr;
+use std::net::IpAddr;
 use std::sync::{Arc, RwLock};
+
+use rocket::http::Status;
+use rocket::request::{self, FromRequest};
+use rocket::{Request, State, Outcome};
 
 use chrono::{DateTime, Local};
 
@@ -24,9 +28,28 @@ impl MusicState {
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct User {
-    pub address: SocketAddr,
+    pub address: IpAddr,
     pub alias: String,
 }
+
+// impl<'a, 'r> FromRequest<'a, 'r> for User {
+//     type Error = ();
+
+//     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+//         match request.remote() {
+//             Some(addr)  => {
+//                 let server_state = request.guard::<State<MusicState>>()?;
+//                 let user_iter = server_state.user_list.read().unwrap().into_iter();
+
+//                 match user_iter.find(|item| item.address == addr) {
+//                     Some(user)  => Outcome::Success(Arc::clone(&user)),
+//                     None        => Outcome::Failure((Status::Unauthorized, ()))
+//                 }
+//             },
+//             None        => Outcome::Failure((Status::Unauthorized, ()))
+//         }
+//     }
+// }
 
 #[derive(Debug)]
 pub struct PlaylistItem {

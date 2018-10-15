@@ -1,15 +1,24 @@
 extern crate rocket;
 
-use rocket::State;
+use std::net::SocketAddr;
 
+use rocket::State;
+use rocket_contrib::Json;
+
+use crate::forms::AliasForm;
 use crate::models::{MusicState, PlaylistItem, User};
 
 #[get("/")]
-fn index(state: State<MusicState>) -> &'static str {
-    "Hello world!"
+fn index(state: State<MusicState>) -> String {
+    format!("{:?}", state)
 }
 
-#[get("/hello")]
-fn hello() -> &'static str {
-    "Another hello!"
+#[post("/alias", data = "<alias>", format = "application/json")]
+fn update_alias(alias: Json<AliasForm>, state: State<MusicState>, remote: SocketAddr) -> String {
+    // TODO: Update the aliase (or insert one if it doesn't exist)
+    format!(
+        "New alias: {} for addr: {:?}\n",
+        alias.into_inner().alias,
+        remote.ip()
+    )
 }
