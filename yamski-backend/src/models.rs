@@ -2,7 +2,6 @@ use std::cmp::Ordering;
 use std::fs::File;
 use std::net::IpAddr;
 use std::sync::{RwLock, Arc};
-use std::cell::RefCell;
 
 use std::collections::HashMap;
 
@@ -26,30 +25,10 @@ impl MusicState {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct User {
-    pub address: IpAddr,
+#[derive(Serialize, Debug)]
+pub struct Alias {
     pub alias: String,
 }
-
-// impl<'a, 'r> FromRequest<'a, 'r> for User {
-//     type Error = ();
-
-//     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-//         match request.remote() {
-//             Some(addr)  => {
-//                 let server_state = request.guard::<State<MusicState>>()?;
-//                 let user_iter = server_state.user_list.read().unwrap().into_iter();
-
-//                 match user_iter.find(|item| item.address == addr) {
-//                     Some(user)  => Outcome::Success(Arc::clone(&user)),
-//                     None        => Outcome::Failure((Status::Unauthorized, ()))
-//                 }
-//             },
-//             None        => Outcome::Failure((Status::Unauthorized, ()))
-//         }
-//     }
-// }
 
 #[derive(Debug)]
 pub struct PlaylistItem {
@@ -57,7 +36,7 @@ pub struct PlaylistItem {
     pub file: File,
     pub source_url: Option<Url>,
     pub duration: i32,
-    pub user: Arc<User>,
+    pub user: IpAddr,
     pub submitted: DateTime<Local>,
 }
 
