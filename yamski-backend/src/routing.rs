@@ -2,9 +2,10 @@ extern crate rocket;
 
 use std::net::SocketAddr;
 
-use std::sync::Arc;
 
 use rocket::State;
+use rocket::http::Status;
+use rocket::response::status::Custom;
 use rocket_contrib::Json;
 
 use crate::forms::AliasForm;
@@ -16,21 +17,13 @@ fn index(state: State<MusicState>) -> String {
 }
 
 #[post("/alias", data = "<alias>", format = "application/json")]
-fn update_alias(alias: Json<AliasForm>, state: State<MusicState>, remote: SocketAddr) -> String {
-    // TODO: Update the aliase (or insert one if it doesn't exist)
-    let user = state
-        .user_list
-        .read()
-        .unwrap()
-        .into_iter()
-        .find(|item: &Arc<User>| {
-            item.address == remote.ip()
-        });
+fn update_alias(alias: Json<AliasForm>, state: State<MusicState>, remote: SocketAddr) -> Custom<String> {
+    let mut rw_guard = state.users.write().unwrap();
 
-    match user {
-        Some(u)  => {},
-        None        => {},
-    }
+    rw_guard
+        .entry(remote.ip())
+        .and_modify(|a| a.clone_from(&alias.alias))
+        .or_insert(alias.alias.clone());
 
-    format!("Changing alias for {:?} to {}\n", remote.ip(), alias.alias)
+    Custom(Status::Ok, format!("Alias set to {}", alias.alias))
 }

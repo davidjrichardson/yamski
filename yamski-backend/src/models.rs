@@ -1,11 +1,10 @@
 use std::cmp::Ordering;
 use std::fs::File;
 use std::net::IpAddr;
-use std::sync::{Arc, RwLock};
+use std::sync::{RwLock, Arc};
+use std::cell::RefCell;
 
-use rocket::http::Status;
-use rocket::request::{self, FromRequest};
-use rocket::{Request, State, Outcome};
+use std::collections::HashMap;
 
 use chrono::{DateTime, Local};
 
@@ -13,14 +12,15 @@ use url::Url;
 
 #[derive(Debug)]
 pub struct MusicState {
-    pub user_list: RwLock<Vec<Arc<User>>>,
+    // pub user_list: RwLock<Vec<Arc<User>>>,
+    pub users: RwLock<HashMap<IpAddr, String>>,
     pub playlist: RwLock<Vec<Arc<PlaylistItem>>>,
 }
 
 impl MusicState {
     pub fn new() -> MusicState {
         MusicState {
-            user_list: RwLock::new(Vec::new()),
+            users: RwLock::new(HashMap::new()),
             playlist: RwLock::new(Vec::new()),
         }
     }
