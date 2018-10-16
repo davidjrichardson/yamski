@@ -19,7 +19,12 @@ fn main() {
     rocket::ignite()
         .mount(
             "/",
-            routes![routing::index, routing::update_alias, routing::get_alias],
+            routes![
+                routing::index,
+                routing::update_alias,
+                routing::get_alias,
+                routing::get_playlist,
+            ],
         )
         .manage(models::MusicState::new())
         .launch();

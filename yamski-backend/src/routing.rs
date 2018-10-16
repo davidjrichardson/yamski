@@ -8,7 +8,7 @@ use rocket::State;
 use rocket_contrib::Json;
 
 use crate::forms::AliasForm;
-use crate::models::{Alias, MusicState, PlaylistItem};
+use crate::models::{Alias, MusicState, Playlist, PublicPlaylistItem};
 
 #[get("/")]
 fn index(state: State<MusicState>) -> String {
@@ -41,4 +41,20 @@ fn update_alias(
         .or_insert(alias.alias.clone());
 
     Custom(Status::Ok, format!("Alias set to {}", alias.alias))
+}
+
+#[get("/playlist", format = "application/json")]
+fn get_playlist(state: State<MusicState>, remote: SocketAddr) -> Json<Playlist> {
+    let rw_guard = state.playlist.read().unwrap();
+
+    Json(Playlist {
+        list: rw_guard
+            .to_vec()
+            .iter()
+            .map(|item| {
+                let c = item.clone();
+                PublicPlaylistItem::from(c, remote.ip())
+            })
+            .collect(),
+    })
 }

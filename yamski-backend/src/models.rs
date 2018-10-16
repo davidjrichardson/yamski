@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
-use std::fs::File;
+use std::path::PathBuf;
 use std::net::IpAddr;
-use std::sync::{RwLock, Arc};
+use std::sync::RwLock;
 
 use std::collections::HashMap;
 
@@ -11,9 +11,8 @@ use url::Url;
 
 #[derive(Debug)]
 pub struct MusicState {
-    // pub user_list: RwLock<Vec<Arc<User>>>,
     pub users: RwLock<HashMap<IpAddr, String>>,
-    pub playlist: RwLock<Vec<Arc<PlaylistItem>>>,
+    pub playlist: RwLock<Vec<PlaylistItem>>,
 }
 
 impl MusicState {
@@ -30,14 +29,45 @@ pub struct Alias {
     pub alias: String,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
+pub struct Playlist {
+    pub list: Vec<PublicPlaylistItem>,
+}
+
+#[derive(Debug, Clone)]
 pub struct PlaylistItem {
     pub title: String,
-    pub file: File,
+    pub file: PathBuf,
     pub source_url: Option<Url>,
     pub duration: i32,
     pub user: IpAddr,
     pub submitted: DateTime<Local>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PublicPlaylistItem {
+    pub title: String,
+    pub file: PathBuf,
+    #[serde(with = "url_serde")]
+    pub source_url: Option<Url>,
+    pub duration: i32,
+    pub user: IpAddr,
+    pub client_submitted: bool,
+    pub submitted: DateTime<Local>,
+}
+
+impl PublicPlaylistItem {
+    pub fn from(old: PlaylistItem, remote: IpAddr) -> PublicPlaylistItem {
+        PublicPlaylistItem {
+            title: old.title,
+            file: old.file,
+            source_url: old.source_url,
+            duration: old.duration,
+            user: old.user,
+            submitted: old.submitted,
+            client_submitted: old.user == remote
+        }
+    }
 }
 
 impl PartialEq for PlaylistItem {
