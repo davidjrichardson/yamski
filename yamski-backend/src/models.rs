@@ -1,13 +1,20 @@
 use std::cmp::Ordering;
-use std::path::PathBuf;
 use std::net::IpAddr;
-use std::sync::RwLock;
+use std::path::PathBuf;
+use std::sync::{RwLock, RwLockReadGuard};
 
 use std::collections::HashMap;
 
 use chrono::{DateTime, Local};
 
 use url::Url;
+
+#[derive(Debug, Serialize, Clone)]
+pub enum DownloadState {
+    NotStarted,
+    InProgress,
+    Complete,
+}
 
 #[derive(Debug)]
 pub struct MusicState {
@@ -38,34 +45,36 @@ pub struct Playlist {
 pub struct PlaylistItem {
     pub title: String,
     pub file: PathBuf,
-    pub source_url: Option<Url>,
+    pub source_url: Url,
     pub duration: i32,
     pub user: IpAddr,
     pub submitted: DateTime<Local>,
+    pub downloading: DownloadState,
 }
 
 #[derive(Debug, Serialize)]
 pub struct PublicPlaylistItem {
     pub title: String,
-    pub file: PathBuf,
-    #[serde(with = "url_serde")]
-    pub source_url: Option<Url>,
     pub duration: i32,
-    pub user: IpAddr,
+    pub user: String,
     pub client_submitted: bool,
     pub submitted: DateTime<Local>,
+    pub downloading: DownloadState,
 }
 
 impl PublicPlaylistItem {
-    pub fn from(old: PlaylistItem, remote: IpAddr) -> PublicPlaylistItem {
+    pub fn from(
+        old: PlaylistItem,
+        remote: IpAddr,
+        user_map: &RwLockReadGuard<HashMap<IpAddr, String>>,
+    ) -> PublicPlaylistItem {
         PublicPlaylistItem {
             title: old.title,
-            file: old.file,
-            source_url: old.source_url,
             duration: old.duration,
-            user: old.user,
+            user: user_map.get(&remote).unwrap().to_string(),
             submitted: old.submitted,
-            client_submitted: old.user == remote
+            client_submitted: old.user == remote,
+            downloading: old.downloading,
         }
     }
 }
