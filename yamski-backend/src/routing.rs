@@ -9,22 +9,23 @@ use rocket::State;
 use rocket_contrib::Json;
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use chrono::{Duration, Local};
 
 use url::Url;
 
 use crate::forms::{AliasForm, PlaylistItemForm};
-use crate::models::{Alias, DownloadState, MusicState, Playlist, PlaylistItem, PublicPlaylistItem};
+use crate::models::{Alias, MusicState, Playlist, PlaylistItem, PublicPlaylistItem};
 use crate::PlaylistChannel;
 
 #[get("/")]
-fn index(state: State<MusicState>) -> String {
+fn index(state: State<Arc<MusicState>>) -> String {
     format!("{:?}", state)
 }
 
 #[get("/alias", format = "application/json")]
-fn get_alias(state: State<MusicState>, remote: SocketAddr) -> Option<Json<Alias>> {
+fn get_alias(state: State<Arc<MusicState>>, remote: SocketAddr) -> Option<Json<Alias>> {
     let rw_guard = state.users.read().unwrap();
 
     match rw_guard.get(&remote.ip()) {
@@ -38,7 +39,7 @@ fn get_alias(state: State<MusicState>, remote: SocketAddr) -> Option<Json<Alias>
 #[post("/alias", data = "<alias>", format = "application/json")]
 fn update_alias(
     alias: Json<AliasForm>,
-    state: State<MusicState>,
+    state: State<Arc<MusicState>>,
     remote: SocketAddr,
 ) -> Custom<String> {
     let mut rw_guard = state.users.write().unwrap();
@@ -104,7 +105,7 @@ fn get_title(url: &Url) -> String {
 #[post("/playlist", data = "<item>", format = "application/json")]
 fn add_playlist_item(
     item: Json<PlaylistItemForm>,
-    state: State<MusicState>,
+    state: State<Arc<MusicState>>,
     msg_queue: State<PlaylistChannel>,
     remote: SocketAddr,
 ) -> Result<Json<PublicPlaylistItem>, Status> {
@@ -119,18 +120,17 @@ fn add_playlist_item(
                 source_url: source_url.clone(),
                 user: remote.ip(),
                 submitted: Local::now(),
-                downloading: DownloadState::NotStarted,
                 file: PathBuf::new(),
             };
 
-            println!("user alias guard unwrap");
             let user_alias_guard = state.users.read().unwrap();
             let public_playlist_item =
-                PublicPlaylistItem::from(playlist_item.clone(), remote.ip(), &user_alias_guard);
+                PublicPlaylistItem::from(playlist_item.clone(), remote.ip(), &user_alias_guard)
+                    .expect("Failed to convert PlaylistItem");
 
+            // Send the new playlist item to the worker thread and add it to the queue
             match msg_queue.0.try_send(playlist_item.clone()) {
                 Ok(_) => {
-                    println!("playlist guard unwrap");
                     let mut playist_guard = state.playlist.write().unwrap();
                     playist_guard.push(playlist_item);
 
@@ -144,7 +144,7 @@ fn add_playlist_item(
 }
 
 #[get("/playlist", format = "application/json")]
-fn get_playlist(state: State<MusicState>, remote: SocketAddr) -> Json<Playlist> {
+fn get_playlist(state: State<Arc<MusicState>>, remote: SocketAddr) -> Json<Playlist> {
     let rw_guard = state.playlist.read().unwrap();
     let users_rw_guard = state.users.read().unwrap();
 
@@ -152,7 +152,10 @@ fn get_playlist(state: State<MusicState>, remote: SocketAddr) -> Json<Playlist> 
         list: rw_guard
             .to_vec()
             .iter()
-            .map(|item| PublicPlaylistItem::from(item.clone(), remote.ip(), &users_rw_guard))
+            .map(|item| {
+                PublicPlaylistItem::from(item.clone(), remote.ip(), &users_rw_guard)
+                    .expect("Failed to create playlist JSON")
+            })
             .collect(),
     })
 }
