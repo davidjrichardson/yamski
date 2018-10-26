@@ -22,13 +22,41 @@ use std::thread;
 
 use csv::Reader;
 
+use std::fs::remove_dir_all;
+use std::process::{Command, Stdio};
+use std::path::Path;
+
 use crate::models::PlaylistItem;
 
 struct PlaylistChannel(mpsc::SyncSender<PlaylistItem>);
 
 fn process_playlist_item(trigger: mpsc::Receiver<PlaylistItem>) {
-    // TODO: Download the video (output status ETC to console)
-    print!("Worker thread invoked: {:?}", trigger.recv().unwrap());
+    let item = trigger.recv().expect("Was triggered but received nothing");
+    println!("Downloading {}", item.title);
+
+    let file_path = item.file.to_str().unwrap();
+    let mut download_cmd = Command::new("youtube-dl")
+        .arg("--no-playlist")
+        .arg("-o")
+        .arg(file_path)
+        .arg(item.source_url.to_string())
+        .stdout(Stdio::null())
+        .spawn()
+        .expect(
+            format!(
+                "Failed to download video at {}",
+                item.source_url.to_string()
+            )
+            .as_str(),
+        );
+
+    println!(
+        "{}",
+        download_cmd
+            .wait()
+            .and_then(|_x| Ok(format!("{} downloaded successfully", item.title)))
+            .expect("Failed to execute download")
+    );
 }
 
 fn main() {
@@ -39,8 +67,12 @@ fn main() {
         .map(|item| item.get(0).unwrap().to_string())
         .collect::<Vec<_>>();
     let names_arc = Arc::new(names);
-
     let state = Arc::new(models::MusicState::new(names_arc));
+
+    if Path::new("tmp/").exists() {
+        println!("Cleaning previous videos");
+        remove_dir_all("tmp/").expect("Failed to clean video directory");
+    }
 
     // Worker thread init
     let (tx, rx) = mpsc::sync_channel(1);

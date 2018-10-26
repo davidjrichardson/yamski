@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::net::IpAddr;
-use std::path::PathBuf;
 use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::path::PathBuf;
 
 use std::collections::HashMap;
 
@@ -46,8 +46,6 @@ impl Fairing for MusicState {
         match remote {
             Some(sock) => {
                 let ip_addr = sock.ip();
-
-                println!("Write guard");
                 let mut user_write_guard = self.users.write().unwrap();
 
                 match user_write_guard.get(&ip_addr) {

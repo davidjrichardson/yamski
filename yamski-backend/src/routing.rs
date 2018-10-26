@@ -2,18 +2,20 @@ extern crate rocket;
 
 use std::net::SocketAddr;
 use std::process::Command;
+use std::path::PathBuf;
 
 use rocket::http::Status;
 use rocket::response::status::Custom;
 use rocket::State;
 use rocket_contrib::Json;
 
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use chrono::{Duration, Local};
 
 use url::Url;
+
+use uuid::Uuid;
 
 use crate::forms::{AliasForm, PlaylistItemForm};
 use crate::models::{Alias, MusicState, Playlist, PlaylistItem, PublicPlaylistItem};
@@ -114,13 +116,16 @@ fn add_playlist_item(
             let duration = get_duration(&source_url);
             let title = get_title(&source_url);
 
+            let mut file_name = Uuid::new_v4().to_simple().to_string();
+            file_name.push_str(".mp4");
+
             let playlist_item = PlaylistItem {
                 title: title,
                 duration: duration.num_seconds() as i32,
                 source_url: source_url.clone(),
                 user: remote.ip(),
                 submitted: Local::now(),
-                file: PathBuf::new(),
+                file: PathBuf::from(format!(r"tmp/videos/{}", file_name)),
             };
 
             let user_alias_guard = state.users.read().unwrap();
